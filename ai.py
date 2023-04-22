@@ -1,6 +1,107 @@
-import tree
+import random
 
-class AI ():
+class Tree:
+    def __init__(self, aiBoard, humanBoard, maxDepth):
+        rootNode = Node(aiBoard, humanBoard, 0, -1, -1)
+        self.root = rootNode
+        self.maxDepth = maxDepth  
+
+    def computeBestColumn(self):
+        bestvalue = self.root.value
+        rootChildren = self.root.children
+        print("Best   value :", bestvalue)
+        print("Column values:", rootChildren)
+        bestColumns = [c.col for c in rootChildren if c.value == bestvalue]
+        print("Best Column :", bestColumns)
+        if bestColumns:
+            if len(bestColumns) > 1:
+                return min(bestColumns, key=lambda x: 3-x)
+            else:
+                return bestColumns[0]
+        raise Exception("Failed to find best value")
+
+    def fork(self, ai, node):
+        bMyTurn = node.depth % 2
+        possibleBits = ai.getPossibleMoves(node.aiBoard | node.humanBoard)
+        childrenNodes = []
+        for colbitTuple in possibleBits:
+            col = colbitTuple[0]
+            if bMyTurn:
+                tmpMyBoard = ai.setNthBit(node.aiBoard, colbitTuple[1])
+                tmpOppBoard = node.humanBoard
+            else:
+                tmpMyBoard = node.aiBoard
+                tmpOppBoard = ai.setNthBit(node.humanBoard, colbitTuple[1])
+            childNode = Node(tmpMyBoard, tmpOppBoard, node.depth+1, node, col)
+            childrenNodes.append(childNode)
+        node.children = childrenNodes
+
+    def alphabeta(self, b, ai, node, depth, alpha, beta):
+        isTurn = node.depth % 2 == 0  
+        if depth == 0 or node.depth == self.maxDepth:
+            if node.value is None:
+                node.value = ai.evaluateBoard(b, node.aiBoard, node.humanBoard, isTurn)
+            return node.value
+
+        self.fork(ai, node)
+        if isTurn:
+            v = float('-inf')
+            for child in node.children:
+                v = max(v, self.alphabeta(b, ai, child, depth-1, alpha, beta))
+                alpha = max(alpha, v)
+                if node.value is None or alpha > node.value:
+                    node.value = alpha
+                if beta <= alpha:
+                    node.value = None
+                    break
+            return v
+        else:
+            v = float('inf')
+            for child in node.children:
+                v = min(v, self.alphabeta(b, ai, child, depth-1, alpha, beta))
+                beta = min(beta, v)
+                if node.value is None or beta < node.value:
+                    node.value = beta
+                if beta <= alpha:
+                    node.value = None
+                    break
+            return v
+
+
+class Node:
+    def __init__(self, aiBoard, humanBoard, depth, parentNode, col, value=None):
+        self.aiBoard = aiBoard
+        self.humanBoard = humanBoard
+        self.value = value
+        self.depth = depth
+        if depth == 0: 
+            self.parent = self 
+        else:
+            self.parent = parentNode
+        self.children = []
+        self.col = col
+
+    def computeValue(self):
+        if self.children and self.value is None:
+            if self.depth % 2:
+                self.value = min(c.value for c in self.children)
+            else:
+                self.value = max(c.value for c in self.children)
+            return self.value
+
+    def __repr__(self):
+        return str(self.value)
+
+    def __eq__(self, node):
+        return self.value == node.value
+
+    def __lt___(self, node):
+        return self.value < node.value
+
+    def __gt__(self, node):
+        return self.value > node.value
+
+class AI:
     def __init__(self, name="CPU"):
         self.name = name
 
@@ -16,7 +117,7 @@ class AI ():
     def setNthBit(self, num, n):
         return num | (1 << n)
 
-    def get_legal_locations(self, overall_bitboard):
+    def getPossibleMoves(self, overall_bitboard):
         listOfCoords = []
         for i in range(7):  
             for x in range(i*7, i*7+6):  
@@ -25,7 +126,7 @@ class AI ():
                     break
         return listOfCoords
 
-    def get_legal_board(self, overall_bitboard):
+    def getLegalBoard(self, overall_bitboard):
         board = 0
         for i in range(7):
             for x in range(i*7, i*7+6):
@@ -33,7 +134,8 @@ class AI ():
                     board |= (1 << x)
                     break
         return board
-    def evaluate3(self, oppBoard, myBoard):
+    
+    def countAlignmentsOfThree(self, oppBoard, myBoard):
         inverseBoard = ~(myBoard | oppBoard)
         rShift7MyBoard = myBoard >> 7
         lShift7MyBoard = myBoard << 7
@@ -89,7 +191,7 @@ class AI ():
 
         return result
 
-    def evaluate2(self, oppBoard, myBoard):
+    def countAlignmentsOfTwo(self, oppBoard, myBoard):
         inverseBoard = ~(myBoard | oppBoard)
         rShift7MyBoard = myBoard >> 7
         rShift14MyBoard = myBoard >> 14
@@ -126,7 +228,7 @@ class AI ():
 
         return result
 
-    def evaluate1(self, oppBoard, myBoard):
+    def countAlignmentsOfOne(self, oppBoard, myBoard):
         inverseBoard = ~(myBoard | oppBoard)
         result = inverseBoard & (myBoard >> 7)
         result |= inverseBoard & (myBoard << 7)
@@ -141,10 +243,9 @@ class AI ():
         i = (i & 0x00FF00FF00FF00FF) + ((i & 0xFF00FF00FF00FF00) >> 8)
         i = (i & 0x0000FFFF0000FFFF) + ((i & 0xFFFF0000FFFF0000) >> 16)
         i = (i & 0x00000000FFFFFFFF) + ((i & 0xFFFFFFFF00000000) >> 32)
-
         return i
 
-    def evalCost(self, b, oppBoard, myBoard, bMyTurn):
+    def evaluateBoard(self, b, oppBoard, myBoard, bMyTurn):
         winReward = 9999999
         OppCost3Row = 1000
         MyCost3Row = 3000
@@ -153,27 +254,27 @@ class AI ():
         OppCost1Row = 100
         MyCost1Row = 100
 
-        if b.hasWon(oppBoard):
+        if b.hasWinner(oppBoard):
             return -winReward
-        elif b.hasWon(myBoard):
+        elif b.hasWinner(myBoard):
             return winReward
 
-        get3Win = self.evaluate3(oppBoard, myBoard)
+        get3Win = self.countAlignmentsOfThree(oppBoard, myBoard)
         winning3 = self.bitboardBits(get3Win) * MyCost3Row
 
-        get3Block = self.evaluate3(myBoard, oppBoard)
+        get3Block = self.countAlignmentsOfThree(myBoard, oppBoard)
         blocking3 = self.bitboardBits(get3Block) * -OppCost3Row
 
-        get2Win = self.evaluate2(oppBoard, myBoard)
+        get2Win = self.countAlignmentsOfTwo(oppBoard, myBoard)
         winning2 = self.bitboardBits(get2Win) * MyCost2Row
 
-        get2Block = self.evaluate2(myBoard, oppBoard)
+        get2Block = self.countAlignmentsOfTwo(myBoard, oppBoard)
         blocking2 = self.bitboardBits(get2Block) * -OppCost2Row
 
-        get1Win = self.evaluate1(oppBoard, myBoard)
+        get1Win = self.countAlignmentsOfOne(oppBoard, myBoard)
         winning1 = self.bitboardBits(get1Win) * MyCost1Row
 
-        get1Block = self.evaluate1(myBoard, oppBoard)
+        get1Block = self.countAlignmentsOfOne(myBoard, oppBoard)
         blocking1 = self.bitboardBits(get1Block) * -OppCost1Row
 
         return winning3 + blocking3 + winning2 + blocking2\
@@ -182,9 +283,8 @@ class AI ():
     def search(self, board):
         myBoard = board.BITBOARDS[board.TURN]
         oppBoard = board.BITBOARDS[(not board.TURN)]
-        maxDepth = 5
-
-        g = tree.graph(myBoard, oppBoard, maxDepth) 
+        maxDepth = 7
+        g = Tree(myBoard, oppBoard, maxDepth) 
 
         import time
         start = time.time()
@@ -193,29 +293,35 @@ class AI ():
 
         end = time.time()
         print("duration : ",end - start)
-        return g.getMove()
 
-    def forced_moves(self, board):
+        return g.computeBestColumn()
+
+    def computeMustPlayCols(self, board):
         myBoard = board.BITBOARDS[board.TURN]
         oppBoard = board.BITBOARDS[(not board.TURN)]
-        possibleBits = self.get_legal_locations(myBoard | oppBoard)
-
+        possibleBits = self.getPossibleMoves(myBoard | oppBoard)
         forcedCols = [] 
         for colbitTuple in possibleBits:
             tempMyBoard = self.setNthBit(myBoard, colbitTuple[1])
             tempOppBoard = self.setNthBit(oppBoard, colbitTuple[1])
-
-            if board.hasWon(tempMyBoard):
+            if board.hasWinner(tempMyBoard):
                 return colbitTuple[0]
-            elif board.hasWon(tempOppBoard):
+            elif board.hasWinner(tempOppBoard):
                 forcedCols.append(colbitTuple[0])
-
         if forcedCols:
             return forcedCols[0]
         return -1
 
     def play(self, board):
-        forcedColumn = self.forced_moves(board)  
+        forcedColumn = self.computeMustPlayCols(board)  
         if forcedColumn > -1:
             return forcedColumn  
         return self.search(board) 
+
+class RandomPlayer(AI):
+    def play(self, board):
+        myBoard = board.BITBOARDS[board.TURN]
+        oppBoard = board.BITBOARDS[(not board.TURN)]
+        col = random.choice([m[0] for m in super().getPossibleMoves(myBoard | oppBoard)])
+        print("Random Column Chosen", col)
+        return col

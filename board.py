@@ -12,11 +12,10 @@ class Board:
             player = self.PLAYERS[self.TURN]
             chosenCol = player.play(self)
             if chosenCol >= 0:
-                return self.placeToken(chosenCol)
-
+                return self.dropPiece(chosenCol)
             return False
 
-    def placeToken(self, col):
+    def dropPiece(self, col):
         if col < 0:  
             return False
 
@@ -30,31 +29,28 @@ class Board:
             y += 1
         return False 
 
-    def hasWon(self, bitboard):
+    def hasWinner(self, bitboard):
         y = bitboard & (bitboard >> 6)
-        if (y & (y >> 2 * 6)):  # check \ diagonal
+        if (y & (y >> 2 * 6)):  
             return True
         y = bitboard & (bitboard >> 7)
-        if (y & (y >> 2 * 7)):  # check horizontal
+        if (y & (y >> 2 * 7)):  
             return True
         y = bitboard & (bitboard >> 8)
-        if (y & (y >> 2 * 8)):  # check / diagonal
+        if (y & (y >> 2 * 8)):  
             return True
         y = bitboard & (bitboard >> 1)
-        if (y & (y >> 2)):  # check vertical
+        if (y & (y >> 2)):  
             return True
         return False
 
-    def hasDrawn(self, overall_bitboard):
+    def isADraw(self, overall_bitboard):
         return (overall_bitboard & 0xFDFBF7EFDFBF) == 0xFDFBF7EFDFBF
 
     def endTurn(self):
-        if self.hasWon(self.BITBOARDS[self.TURN]):
+        if self.hasWinner(self.BITBOARDS[self.TURN]):
             return 1
-
-        if self.hasDrawn(self.BITBOARDS[0] | self.BITBOARDS[1]):
+        if self.isADraw(self.BITBOARDS[0] | self.BITBOARDS[1]):
             return 2
-
         self.TURN = not self.TURN
-
         return False

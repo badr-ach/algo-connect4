@@ -1,12 +1,10 @@
-import board
-from ai import AI
-
-
+from board import Board
+from ai import AI, RandomPlayer
 
 def main():
-    player1 = AI("1")
+    player1 = RandomPlayer("1")
     player2 = AI("2")
-    gameBoard = board.Board(player1, player2)
+    gameBoard = Board(player1, player2)
     
     isDone = False
 
@@ -22,7 +20,7 @@ def main():
 
     print("\n ======================")
 
-    customBoard = board.Board(player1, player2, turn=0, bitboards=[144783458459,15231064178724])
+    customBoard = Board(player1, player2, turn=0, bitboards=[144783458459,15231064178724])
     col = player1.play(customBoard)
 
     print("Column: ", col)
