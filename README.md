@@ -2,6 +2,16 @@
 
 The file 'api.py' contains an API with one endpoint that returns the optimal column for a connect4 game based on an alpha-beta pruning algorithm.
 
+# How to use
+Either Follow these steps : 
+- Make sure you have python and pip installed : `python --version` and `pip --version` (the version I used are python *3.10.10* and pip *23.0.1*)
+- clone the repository
+- run `pip install -r requirements.txt`
+- run `python api.py`
+
+Or use the provided containerized image in https://hub.docker.com/repository/docker/badrach/algo-connect4/general  \
+You can use : `sudo docker run --network host -d badrach/algo-connect4:latest` after pulling the image to run it locally on the port 5000 *(localhost:5000)*.
+
 # Quick Details
 
 - Evaluation function is a simple function that counts the number of aligned tokens for each player and multiplies it by a coffecient.

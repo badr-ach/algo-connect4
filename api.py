@@ -45,13 +45,13 @@ def get_move(board):
 
     customBoard = Board(player1, player2, turn=0, bitboards=[m_board,h_board])
     
-    if(customBoard.hasWon(customBoard.BITBOARDS[0])):
+    if(customBoard.hasWinner(customBoard.BITBOARDS[0])):
         return jsonify({'detail': 'Game is Over'}), 422
     
-    if(customBoard.hasWon(customBoard.BITBOARDS[1])):
+    if(customBoard.hasWinner(customBoard.BITBOARDS[1])):
         return jsonify({'detail': 'Game is Over'}), 422
     
-    if(customBoard.hasDrawn(customBoard.BITBOARDS[0] & customBoard.BITBOARDS[1])):
+    if(customBoard.isADraw(customBoard.BITBOARDS[0] & customBoard.BITBOARDS[1])):
         return jsonify({'detail': 'Board is full'}), 422
 
     next_move = player1.play(customBoard)

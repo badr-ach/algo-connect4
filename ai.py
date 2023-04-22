@@ -283,7 +283,7 @@ class AI:
     def search(self, board):
         myBoard = board.BITBOARDS[board.TURN]
         oppBoard = board.BITBOARDS[(not board.TURN)]
-        maxDepth = 7
+        maxDepth = 6
         g = Tree(myBoard, oppBoard, maxDepth) 
 
         import time
@@ -322,10 +322,21 @@ class RandomPlayer(AI):
     def play(self, board):
         forcedColumn = self.computeMustPlayCols(board)
         if forcedColumn > -1:
-            print("forcedColumn : ",forcedColumn) 
             return forcedColumn  
         myBoard = board.BITBOARDS[board.TURN]
         oppBoard = board.BITBOARDS[(not board.TURN)]
         col = random.choice([m[0] for m in super().getPossibleMoves(myBoard | oppBoard)])
         return col
     
+class SmartRandomPlayer(AI):
+    def play(self, board):
+        forcedColumn = self.computeMustPlayCols(board) 
+        if forcedColumn > -1:
+            return forcedColumn  
+        colsPriority = [3, 4, 2, 5, 1, 6, 0]
+        myBoard = board.BITBOARDS[board.TURN]
+        oppBoard = board.BITBOARDS[(not board.TURN)]
+        possibleCols = [m[0] for m in super().getPossibleMoves(myBoard | oppBoard)]
+        for col in colsPriority:
+            if col in possibleCols:
+                return col
