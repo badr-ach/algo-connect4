@@ -8,12 +8,13 @@ class Board:
         self.PIECES = [[ 0 for i in range(6)] for i in range(7)]
 
     def play(self):
-            chosenCol = -1
-            player = self.PLAYERS[self.TURN]
-            chosenCol = player.play(self)
-            if chosenCol >= 0:
-                return self.dropPiece(chosenCol)
-            return False
+        chosenCol = -1
+        player = self.PLAYERS[self.TURN]
+        chosenCol = player.play(self)
+        # print("Player: ", player, " Chosen Column: ", chosenCol)
+        if chosenCol >= 0:
+            return self.dropPiece(chosenCol)
+        return False
 
     def dropPiece(self, col):
         if col < 0:  

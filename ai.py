@@ -9,10 +9,10 @@ class Tree:
     def computeBestColumn(self):
         bestvalue = self.root.value
         rootChildren = self.root.children
-        print("Best   value :", bestvalue)
-        print("Column values:", rootChildren)
+        # print("Best   value :", bestvalue)
+        # print("Column values:", rootChildren)
         bestColumns = [c.col for c in rootChildren if c.value == bestvalue]
-        print("Best Column :", bestColumns)
+        # print("Best Column :", bestColumns)
         if bestColumns:
             if len(bestColumns) > 1:
                 return min(bestColumns, key=lambda x: 3-x)
@@ -247,12 +247,12 @@ class AI:
 
     def evaluateBoard(self, b, oppBoard, myBoard, bMyTurn):
         winReward = 9999999
-        OppCost3Row = 1000
-        MyCost3Row = 3000
-        OppCost2Row = 500
-        MyCost2Row = 500
-        OppCost1Row = 100
-        MyCost1Row = 100
+        OppCost3Row = 100
+        MyCost3Row = 100
+        OppCost2Row = 10
+        MyCost2Row = 10
+        OppCost1Row = 1
+        MyCost1Row = 1
 
         if b.hasWinner(oppBoard):
             return -winReward
@@ -292,7 +292,7 @@ class AI:
         g.alphabeta(board, self, g.root, maxDepth,float('-inf'), float('inf'))
 
         end = time.time()
-        print("duration : ",end - start)
+        # print("duration : ",end - start)
 
         return g.computeBestColumn()
 
@@ -320,8 +320,12 @@ class AI:
 
 class RandomPlayer(AI):
     def play(self, board):
+        forcedColumn = self.computeMustPlayCols(board)
+        if forcedColumn > -1:
+            print("forcedColumn : ",forcedColumn) 
+            return forcedColumn  
         myBoard = board.BITBOARDS[board.TURN]
         oppBoard = board.BITBOARDS[(not board.TURN)]
         col = random.choice([m[0] for m in super().getPossibleMoves(myBoard | oppBoard)])
-        print("Random Column Chosen", col)
         return col
+    
