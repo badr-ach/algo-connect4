@@ -12,6 +12,8 @@ Either Follow these steps :
 Or use the provided containerized image in https://hub.docker.com/repository/docker/badrach/algo-connect4/general  \
 You can use : `sudo docker run --network host -d badrach/algo-connect4:latest` after pulling the image to run it locally on the port 5000 *(localhost:5000)*.
 
+There is only one end point : GET /move?b=
+
 # Quick Details
 
 - Evaluation function is a simple function that counts the number of aligned tokens for each player and multiplies it by a coffecient.
